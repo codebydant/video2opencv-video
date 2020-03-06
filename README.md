@@ -18,3 +18,8 @@ This is a C++ program to convert a video to opencv format video
 
 		- cd build/
 		- ./video2opencv <video_file>
+		
+## Note
+To choose more frames, modify:
+
+		(59) - const int total_output_frames = 5; // Number of output desired frames
