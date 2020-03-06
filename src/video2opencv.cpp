@@ -9,12 +9,12 @@
 #include <vector>
 //----------------------------------------------
 
-int fast_mod(const int input, const int ceil) {
-  // apply the modulo operator only when needed
-  // (i.e. when the input is greater than the ceiling)
-  return input >= ceil ? input % ceil : input;
-  // NB: the assumption here is that the numbers are positive
-}
+// int fast_mod(const int input, const int ceil) {
+//   // apply the modulo operator only when needed
+//   // (i.e. when the input is greater than the ceiling)
+//   return input >= ceil ? input % ceil : input;
+//   // NB: the assumption here is that the numbers are positive
+// }
 
 int main(int argc, const char *argv[]) {
 
@@ -48,15 +48,18 @@ int main(int argc, const char *argv[]) {
 
     const int total_number_frames = capture.get(cv::CAP_PROP_FRAME_COUNT);
     const int frames_rate = cvRound(capture.get(cv::CAP_PROP_FPS));
-    const int multiplier = frames_rate * 2; // Increase number for more output frames
     // capture.set(cv::CAP_PROP_POS_AVI_RATIO, 1);
-    const int next_frame_id = capture.get(cv::CAP_PROP_POS_FRAMES);
-    const float current_video_position = capture.get(cv::CAP_PROP_POS_MSEC);
+    // const int next_frame_id = capture.get(cv::CAP_PROP_POS_FRAMES);
+    // const float current_video_position = capture.get(cv::CAP_PROP_POS_MSEC);
     const int frames_width = capture.get(cv::CAP_PROP_FRAME_WIDTH);
     const int frames_height = capture.get(cv::CAP_PROP_FRAME_HEIGHT);
     const float relative_video_position = capture.get(cv::CAP_PROP_POS_AVI_RATIO);
     const int video_duration_msec = cvRound(total_number_frames / (float)frames_rate);
-    const int total_output_frames = cvRound(total_number_frames / (float)multiplier);
+    // const int total_output_frames = cvRound(total_number_frames / (float)multiplier);
+    const int total_output_frames = 5; // Number of output desired frames
+    const int multiplier_factor = cvRound((float)(total_number_frames / total_output_frames));
+    // const int multiplier = frames_rate * 2; // Increase number for more output frames
+    const int multiplier = multiplier_factor; // Increase number for more output frames
     // const float brightness_camera = capture.get(cv::CAP_PROP_BRIGHTNESS);
     // const float contrast_camera = capture.get(cv::CAP_PROP_CONTRAST);
     // const float saturation_camera = capture.get(cv::CAP_PROP_SATURATION);
@@ -66,9 +69,9 @@ int main(int argc, const char *argv[]) {
     std::cout << "-> Total number of frames:        " << total_number_frames << std::endl;
     std::cout << "-> Frame rate:                    " << frames_rate << std::endl;
     std::cout << "-> Duration (sec):                " << video_duration_msec << std::endl;
-    std::cout << "-> Current video pos(msec):       " << current_video_position << std::endl;
+    // std::cout << "-> Current video pos(msec):       " << current_video_position << std::endl;
     std::cout << "-> Relative video pos:            " << relative_video_position << std::endl;
-    std::cout << "-> Next frame index:              " << next_frame_id << std::endl;
+    // std::cout << "-> Next frame index:              " << next_frame_id << std::endl;
     std::cout << "-> Frames width:                  " << frames_width << std::endl;
     std::cout << "-> Frames height:                 " << frames_height << std::endl;
     std::cout << "-> Multiplier for output frames:  " << multiplier << std::endl;
@@ -90,9 +93,10 @@ int main(int argc, const char *argv[]) {
 
     int next_pos;
 
-    for (int frame_id = 1; frame_id <= total_output_frames; frame_id++) {
+    for (int frame_id = 0; frame_id < total_output_frames; frame_id++) {
 
       cv::Mat currentFrame;
+      cv::Mat image_rotated;
 
       if (frame_id == 0) {
         capture.set(cv::CAP_PROP_POS_FRAMES, frame_id);
@@ -102,63 +106,25 @@ int main(int argc, const char *argv[]) {
           std::cout << "-> frame empty: " << std::endl;
           break;
         }
-        cv::Mat image_rotated;
+
         cv::rotate(currentFrame, image_rotated, cv::ROTATE_90_CLOCKWISE);
         images_list_rgb.push_back(image_rotated);
         next_pos += multiplier;
         capture.set(cv::CAP_PROP_POS_FRAMES, next_pos);
       } else {
 
-        if (frame_id == total_output_frames) {
-          next_pos -= 5;
-          capture.set(cv::CAP_PROP_POS_FRAMES, next_pos);
-          // std::cout << "Final position:   " << capture.get(cv::CAP_PROP_POS_FRAMES) << std::endl;
-
-          capture >> currentFrame;
-          if (currentFrame.empty()) {
-            std::cout << "-> frame empty: " << std::endl;
-            break;
-          }
-          cv::Mat image_rotated;
-          cv::rotate(currentFrame, image_rotated, cv::ROTATE_90_CLOCKWISE);
-          images_list_rgb.push_back(image_rotated);
+        // std::cout << "Current position: " << capture.get(cv::CAP_PROP_POS_FRAMES) << std::endl;
+        capture >> currentFrame;
+        if (currentFrame.empty()) {
+          std::cout << "-> frame empty: " << std::endl;
           break;
-        } else {
-
-          // std::cout << "Current position: " << capture.get(cv::CAP_PROP_POS_FRAMES) << std::endl;
-          capture >> currentFrame;
-          if (currentFrame.empty()) {
-            std::cout << "-> frame empty: " << std::endl;
-            break;
-          }
-          cv::Mat image_rotated;
-          cv::rotate(currentFrame, image_rotated, cv::ROTATE_90_CLOCKWISE);
-          images_list_rgb.push_back(image_rotated);
-          next_pos += multiplier;
-          capture.set(cv::CAP_PROP_POS_FRAMES, next_pos);
         }
+
+        cv::rotate(currentFrame, image_rotated, cv::ROTATE_90_CLOCKWISE);
+        images_list_rgb.push_back(image_rotated);
+        next_pos += multiplier;
+        capture.set(cv::CAP_PROP_POS_FRAMES, next_pos);
       }
-
-      // capture.set(cv::CAP_PROP_POS_FRAMES, frame_i * 2);
-      // std::cout << "Current position: " << capture.get(cv::CAP_PROP_POS_FRAMES) << std::endl;
-      // cv::Mat currentFrame;
-
-      // if (fast_mod(frame_i, multiplier) == 0 or frame_i == 0) {
-      //   // if ((frame_i % multiplier) == 0) {
-      //   capture >> currentFrame;
-
-      //   if (currentFrame.empty()) {
-      //     std::cout << "-> frame empty: " << std::endl;
-      //     break;
-      //   }
-
-      //   cv::Mat image_rotated;
-      //   cv::rotate(currentFrame, image_rotated, cv::ROTATE_90_CLOCKWISE);
-      //   images_list_rgb.push_back(image_rotated);
-
-      // } else {
-      //   continue;
-      // }
     }
 
     // // int cont = 1;
@@ -227,7 +193,7 @@ int main(int argc, const char *argv[]) {
 
     std::cout << "-> Video saved: " << filename << std::endl;
     std::cout << "-------------------------------------" << std::endl;
-    cv::destroyAllWindows();
+    // cv::destroyAllWindows();
   }
 
   return 0;
